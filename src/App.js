@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
-import { auth } from './firebase/firebase.utils';
+import { auth, createUserProfileDocument } from './firebase/firebase.utils';
 
 // Pages
 import HomePage from './pages/homepage/homepage.component';
@@ -24,9 +24,31 @@ class App extends React.Component {
 
   componentDidMount() {
     // subscribe to authenticated user
-    this.unsubscribeFromAuth = auth.onAuthStateChanged((user) => {
-      this.setState({ currentUser: user });
-      console.log(user);
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async (userAuth) => {
+      if (userAuth) {
+        const userRef = createUserProfileDocument(userAuth);
+
+        // When something in the db has changed this is a listener that fires after its changes has been made
+        (await userRef).onSnapshot((snapShot) => {
+          if (snapShot) {
+            // set state of current user
+            this.setState(
+              {
+                currentUser: {
+                  id: snapShot.id,
+                  ...snapShot.data(),
+                },
+              },
+              () => {
+                console.log(this.state);
+              }
+            );
+          } else {
+            // Set to null
+            this.setState({ currentUser: userAuth });
+          }
+        });
+      }
     });
   }
 
