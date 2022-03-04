@@ -3,6 +3,9 @@ import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import { auth, createUserProfileDocument } from "./firebase/firebase.utils";
 
+import { connect } from "react-redux";
+import { setCurrentUser } from "./redux/reducers/user/user.action";
+
 // Pages
 import HomePage from "./pages/homepage/homepage.component";
 import ShopPage from "./pages/shop/shop.component";
@@ -12,17 +15,10 @@ import SignInAndSignUpPage from "./pages/sign-in-and-sign-up/sign-in-and-sign-up
 import Header from "./components/header/header.component.jsx";
 
 class App extends React.Component {
-  constructor() {
-    super();
-
-    this.state = {
-      currentUser: null,
-    };
-  }
-
   unsubscribeFromAuth = null;
 
   componentDidMount() {
+    const { setCurrentUser } = this.props;
     // subscribe to authenticated user
     this.unsubscribeFromAuth = auth.onAuthStateChanged(async (userAuth) => {
       if (userAuth) {
@@ -32,15 +28,13 @@ class App extends React.Component {
         (await userRef).onSnapshot((snapShot) => {
           if (snapShot) {
             // set state of current user
-            this.setState({
-              currentUser: {
-                id: snapShot.id,
-                ...snapShot.data(),
-              },
+            setCurrentUser({
+              id: snapShot.id,
+              ...snapShot.data(),
             });
           } else {
             // Set to null
-            this.setState({ currentUser: userAuth });
+            setCurrentUser(userAuth);
           }
         });
       }
@@ -54,7 +48,7 @@ class App extends React.Component {
   render() {
     return (
       <div>
-        <Header currentUser={this.state.currentUser} />
+        <Header />
         <Routes>
           <Route path="/" element={<HomePage />}></Route>
           <Route path="/shop" element={<ShopPage />}></Route>
@@ -65,4 +59,9 @@ class App extends React.Component {
   }
 }
 
-export default App;
+const mapDispatchToProps = (dispatch) => ({
+  setCurrentUser: (user) => dispatch(setCurrentUser(user)), // pass action with args
+});
+
+// Null is passed into connect for 1st arg since we do not need to look into a slice
+export default connect(null, mapDispatchToProps)(App);
