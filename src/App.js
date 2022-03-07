@@ -1,5 +1,6 @@
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
+
 import "./App.css";
 import { auth, createUserProfileDocument } from "./firebase/firebase.utils";
 
@@ -50,18 +51,33 @@ class App extends React.Component {
       <div>
         <Header />
         <Routes>
-          <Route path="/" element={<HomePage />}></Route>
+          <Route exact path="/" element={<HomePage />}></Route>
           <Route path="/shop" element={<ShopPage />}></Route>
-          <Route path="/signin" element={<SignInAndSignUpPage />}></Route>
+          <Route
+            exact
+            path="/signin"
+
+            element={
+              this.props.currentUser ? (
+                <Navigate to="/" replace={true} />
+              ) : (
+                <SignInAndSignUpPage />
+              )
+            }
+          ></Route>
         </Routes>
       </div>
     );
   }
 }
 
+const mapStateToProps = ({ user }) => ({
+  currentUser: user.currentUser,
+});
+
 const mapDispatchToProps = (dispatch) => ({
   setCurrentUser: (user) => dispatch(setCurrentUser(user)), // pass action with args
 });
 
 // Null is passed into connect for 1st arg since we do not need to look into a slice
-export default connect(null, mapDispatchToProps)(App);
+export default connect(mapStateToProps, mapDispatchToProps)(App);
